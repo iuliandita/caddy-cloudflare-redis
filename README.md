@@ -14,12 +14,16 @@ ghcr.io/iuliandita/caddy-cloudflare-redis
 docker.io/iuliandita/caddy-cloudflare-redis
 ```
 
-Tags published by CI:
+Tags published by CI follow the official Caddy tag alias layout for the tracked upstream version:
 
 ```text
 latest
 alpine
+2
+2.11
 2.11.2
+2-alpine
+2.11-alpine
 2.11.2-alpine
 ```
 

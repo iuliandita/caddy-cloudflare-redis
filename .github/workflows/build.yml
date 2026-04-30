@@ -107,6 +107,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate Caddy tag aliases
+        id: caddy-tags
+        run: |
+          set -euo pipefail
+          major="${CADDY_VERSION%%.*}"
+          minor="${CADDY_VERSION%.*}"
+          {
+            echo "tags<<EOF"
+            echo "type=raw,value=latest"
+            echo "type=raw,value=alpine"
+            echo "type=raw,value=${major}"
+            echo "type=raw,value=${minor}"
+            echo "type=raw,value=${CADDY_VERSION}"
+            echo "type=raw,value=${major}-alpine"
+            echo "type=raw,value=${minor}-alpine"
+            echo "type=raw,value=${CADDY_VERSION}-alpine"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Docker metadata for GHCR
         id: meta
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
@@ -117,11 +136,7 @@ jobs:
             org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.licenses=MIT
-          tags: |
-            type=raw,value=latest
-            type=raw,value=alpine
-            type=raw,value=${{ env.CADDY_VERSION }}
-            type=raw,value=${{ env.CADDY_VERSION }}-alpine
+          tags: ${{ steps.caddy-tags.outputs.tags }}
 
       - name: Build and push GHCR image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
@@ -177,6 +192,26 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
+      - name: Generate Caddy tag aliases
+        if: steps.dockerhub.outputs.enabled == 'true'
+        id: caddy-tags
+        run: |
+          set -euo pipefail
+          major="${CADDY_VERSION%%.*}"
+          minor="${CADDY_VERSION%.*}"
+          {
+            echo "tags<<EOF"
+            echo "type=raw,value=latest"
+            echo "type=raw,value=alpine"
+            echo "type=raw,value=${major}"
+            echo "type=raw,value=${minor}"
+            echo "type=raw,value=${CADDY_VERSION}"
+            echo "type=raw,value=${major}-alpine"
+            echo "type=raw,value=${minor}-alpine"
+            echo "type=raw,value=${CADDY_VERSION}-alpine"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Docker metadata for Docker Hub
         if: steps.dockerhub.outputs.enabled == 'true'
         id: meta
@@ -188,11 +223,7 @@ jobs:
             org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.licenses=MIT
-          tags: |
-            type=raw,value=latest
-            type=raw,value=alpine
-            type=raw,value=${{ env.CADDY_VERSION }}
-            type=raw,value=${{ env.CADDY_VERSION }}-alpine
+          tags: ${{ steps.caddy-tags.outputs.tags }}
 
       - name: Build and push Docker Hub image
         if: steps.dockerhub.outputs.enabled == 'true'
