@@ -1,0 +1,30 @@
+# Ignored CVEs for caddy-cloudflare-redis.
+#
+# Format: one CVE ID per line, with a dated rationale above it.
+# Revisit this file at every Caddy release bump.
+#
+# Scope: CVEs listed here are in Go dependencies compiled into the Caddy
+# binary by upstream modules. Remove entries when upstream Caddy/modules
+# ship fixed dependency versions.
+
+# 2026-04-30 / iuliandita
+# CRITICAL: grpc-go authz bypass via HTTP/2 path validation.
+# Bundled via ACME/DNS libs. Fixed in grpc-go 1.79.3.
+CVE-2026-33186
+
+# 2026-04-30 / iuliandita
+# CRITICAL: Step CA unauthenticated SCEP cert issuance.
+# Bundled via smallstep/certificates v0.30.0-rc3. Fixed in 0.30.0.
+# Caddy does not expose SCEP endpoints, so not reachable in this image.
+CVE-2026-30836
+
+# 2026-04-30 / iuliandita
+# HIGH: go-jose DoS via crafted JWE. Fixed in 3.0.5 / 4.1.4.
+# Caddy bundles both v3 and v4 via ACME libs. Single CVE ID covers both.
+CVE-2026-34986
+
+# 2026-04-30 / iuliandita
+# HIGH: OpenTelemetry Go SDK PATH hijacking via BSD kenv command.
+# Only reachable on BSD hosts; this image runs on Alpine Linux.
+# Fixed in otel 1.43.0.
+CVE-2026-39883

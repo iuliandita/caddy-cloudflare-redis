@@ -1,0 +1,217 @@
+name: build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - entrypoint.sh
+      - .dockerignore
+      - .trivyignore
+      - .github/workflows/build.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - entrypoint.sh
+      - .dockerignore
+      - .trivyignore
+      - .github/workflows/build.yml
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+# renovate: datasource=docker depName=caddy
+# renovate: datasource=github-releases depName=caddy-dns/cloudflare
+# renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
+env:
+  CADDY_VERSION: 2.11.2
+  CLOUDFLARE_DNS_VERSION: v0.2.3
+  REDIS_STORAGE_VERSION: v1.8.0
+  IMAGE_NAME: caddy-cloudflare-redis
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
+  DOCKERHUB_IMAGE: docker.io/iuliandita/caddy-cloudflare-redis
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+jobs:
+  build-test:
+    name: build and scan local image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Build local test image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          tags: local/${{ env.IMAGE_NAME }}:test
+          build-args: |
+            CADDY_VERSION=${{ env.CADDY_VERSION }}
+            CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
+            REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+
+      - name: Verify Caddy modules
+        run: |
+          set -euo pipefail
+          docker run --rm local/${IMAGE_NAME}:test caddy list-modules | tee /tmp/modules.txt
+          grep -qx 'dns.providers.cloudflare' /tmp/modules.txt
+          grep -qx 'caddy.storage.redis' /tmp/modules.txt
+
+      - name: Run Trivy vulnerability scanner
+        run: |
+          set -euo pipefail
+          # renovate: datasource=docker depName=aquasec/trivy
+          TRIVY_VERSION=0.70.0
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${GITHUB_WORKSPACE}/.trivyignore:/work/.trivyignore:ro" \
+            -w /work \
+            "aquasec/trivy:${TRIVY_VERSION}" image \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --ignorefile /work/.trivyignore \
+            --exit-code 1 \
+            --format table \
+            local/${IMAGE_NAME}:test
+
+  publish-ghcr:
+    name: publish GHCR image
+    needs: build-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata for GHCR
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
+        with:
+          images: ${{ env.GHCR_IMAGE }}
+          labels: |
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=raw,value=latest
+            type=raw,value=alpine
+            type=raw,value=${{ env.CADDY_VERSION }}
+            type=raw,value=${{ env.CADDY_VERSION }}-alpine
+
+      - name: Build and push GHCR image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          sbom: true
+          provenance: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CADDY_VERSION=${{ env.CADDY_VERSION }}
+            CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
+            REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+          cache-from: type=gha,scope=ghcr
+          cache-to: type=gha,scope=ghcr,mode=max
+
+  publish-dockerhub:
+    name: publish Docker Hub image
+    needs: build-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check Docker Hub secrets
+        id: dockerhub
+        run: |
+          if [ -n "${DOCKERHUB_USERNAME}" ] && [ -n "${DOCKERHUB_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Docker Hub secrets missing; skipping Docker Hub publish."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up QEMU
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
+      - name: Set up Docker Buildx
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: docker.io
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Docker metadata for Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
+        with:
+          images: ${{ env.DOCKERHUB_IMAGE }}
+          labels: |
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=raw,value=latest
+            type=raw,value=alpine
+            type=raw,value=${{ env.CADDY_VERSION }}
+            type=raw,value=${{ env.CADDY_VERSION }}-alpine
+
+      - name: Build and push Docker Hub image
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          sbom: true
+          provenance: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CADDY_VERSION=${{ env.CADDY_VERSION }}
+            CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
+            REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+          cache-from: type=gha,scope=dockerhub
+          cache-to: type=gha,scope=dockerhub,mode=max
