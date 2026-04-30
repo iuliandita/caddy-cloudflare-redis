@@ -88,11 +88,38 @@ jobs:
             --format table \
             local/${IMAGE_NAME}:test
 
-  publish-ghcr:
-    name: publish GHCR image
-    needs: build-test
+  dockerhub-enabled:
+    name: check Docker Hub publishing
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.dockerhub.outputs.enabled }}
+    steps:
+      - name: Check Docker Hub secrets
+        id: dockerhub
+        run: |
+          if [ -n "${DOCKERHUB_USERNAME}" ] && [ -n "${DOCKERHUB_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Docker Hub secrets missing; skipping Docker Hub publish."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-ghcr-platform:
+    name: publish GHCR image (${{ matrix.arch }})
+    needs: build-test
+    if: github.event_name != 'pull_request'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -107,7 +134,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Caddy tag aliases
+      - name: Generate architecture-specific tags
         id: caddy-tags
         run: |
           set -euo pipefail
@@ -115,85 +142,92 @@ jobs:
           minor="${CADDY_VERSION%.*}"
           {
             echo "tags<<EOF"
-            echo "type=raw,value=latest"
-            echo "type=raw,value=alpine"
-            echo "type=raw,value=${major}"
-            echo "type=raw,value=${minor}"
-            echo "type=raw,value=${CADDY_VERSION}"
-            echo "type=raw,value=${major}-alpine"
-            echo "type=raw,value=${minor}-alpine"
-            echo "type=raw,value=${CADDY_VERSION}-alpine"
+            for tag in latest alpine "$major" "$minor" "$CADDY_VERSION" "$major-alpine" "$minor-alpine" "$CADDY_VERSION-alpine"; do
+              echo "${GHCR_IMAGE}:${tag}-${{ matrix.arch }}"
+            done
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
-
-      - name: Docker metadata for GHCR
-        id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
-        with:
-          images: ${{ env.GHCR_IMAGE }}
-          labels: |
-            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.licenses=MIT
-          tags: ${{ steps.caddy-tags.outputs.tags }}
 
       - name: Build and push GHCR image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           push: true
           sbom: true
           provenance: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.caddy-tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
           build-args: |
             CADDY_VERSION=${{ env.CADDY_VERSION }}
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
-          cache-from: type=gha,scope=ghcr
-          cache-to: type=gha,scope=ghcr,mode=max
+          cache-from: type=gha,scope=ghcr-${{ matrix.arch }}
+          cache-to: type=gha,scope=ghcr-${{ matrix.arch }},mode=max
 
-  publish-dockerhub:
-    name: publish Docker Hub image
-    needs: build-test
+  publish-ghcr-manifest:
+    name: publish GHCR manifests
+    needs: publish-ghcr-platform
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     steps:
-      - name: Check Docker Hub secrets
-        id: dockerhub
-        run: |
-          if [ -n "${DOCKERHUB_USERNAME}" ] && [ -n "${DOCKERHUB_TOKEN}" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Docker Hub secrets missing; skipping Docker Hub publish."
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
+      - name: Login to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create multi-arch GHCR manifests
+        run: |
+          set -euo pipefail
+          major="${CADDY_VERSION%%.*}"
+          minor="${CADDY_VERSION%.*}"
+          for tag in latest alpine "$major" "$minor" "$CADDY_VERSION" "$major-alpine" "$minor-alpine" "$CADDY_VERSION-alpine"; do
+            docker buildx imagetools create \
+              -t "${GHCR_IMAGE}:${tag}" \
+              "${GHCR_IMAGE}:${tag}-amd64" \
+              "${GHCR_IMAGE}:${tag}-arm64"
+          done
+
+  publish-dockerhub-platform:
+    name: publish Docker Hub image (${{ matrix.arch }})
+    needs: [build-test, dockerhub-enabled]
+    if: github.event_name != 'pull_request' && needs.dockerhub-enabled.outputs.enabled == 'true'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
       - name: Checkout repository
-        if: steps.dockerhub.outputs.enabled == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Set up QEMU
-        if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-
       - name: Set up Docker Buildx
-        if: steps.dockerhub.outputs.enabled == 'true'
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: Login to Docker Hub
-        if: steps.dockerhub.outputs.enabled == 'true'
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: docker.io
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
-      - name: Generate Caddy tag aliases
-        if: steps.dockerhub.outputs.enabled == 'true'
+      - name: Generate architecture-specific tags
         id: caddy-tags
         run: |
           set -euo pipefail
@@ -201,45 +235,58 @@ jobs:
           minor="${CADDY_VERSION%.*}"
           {
             echo "tags<<EOF"
-            echo "type=raw,value=latest"
-            echo "type=raw,value=alpine"
-            echo "type=raw,value=${major}"
-            echo "type=raw,value=${minor}"
-            echo "type=raw,value=${CADDY_VERSION}"
-            echo "type=raw,value=${major}-alpine"
-            echo "type=raw,value=${minor}-alpine"
-            echo "type=raw,value=${CADDY_VERSION}-alpine"
+            for tag in latest alpine "$major" "$minor" "$CADDY_VERSION" "$major-alpine" "$minor-alpine" "$CADDY_VERSION-alpine"; do
+              echo "${DOCKERHUB_IMAGE}:${tag}-${{ matrix.arch }}"
+            done
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Docker metadata for Docker Hub
-        if: steps.dockerhub.outputs.enabled == 'true'
-        id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
+      - name: Build and push Docker Hub image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
-          images: ${{ env.DOCKERHUB_IMAGE }}
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          sbom: true
+          provenance: true
+          tags: ${{ steps.caddy-tags.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.description=Caddy with Cloudflare DNS and Redis storage modules
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.licenses=MIT
-          tags: ${{ steps.caddy-tags.outputs.tags }}
-
-      - name: Build and push Docker Hub image
-        if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/amd64
-          push: true
-          sbom: true
-          provenance: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             CADDY_VERSION=${{ env.CADDY_VERSION }}
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
-          cache-from: type=gha,scope=dockerhub
-          cache-to: type=gha,scope=dockerhub,mode=max
+          cache-from: type=gha,scope=dockerhub-${{ matrix.arch }}
+          cache-to: type=gha,scope=dockerhub-${{ matrix.arch }},mode=max
+
+  publish-dockerhub-manifest:
+    name: publish Docker Hub manifests
+    needs: [publish-dockerhub-platform, dockerhub-enabled]
+    if: github.event_name != 'pull_request' && needs.dockerhub-enabled.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: docker.io
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Create multi-arch Docker Hub manifests
+        run: |
+          set -euo pipefail
+          major="${CADDY_VERSION%%.*}"
+          minor="${CADDY_VERSION%.*}"
+          for tag in latest alpine "$major" "$minor" "$CADDY_VERSION" "$major-alpine" "$minor-alpine" "$CADDY_VERSION-alpine"; do
+            docker buildx imagetools create \
+              -t "${DOCKERHUB_IMAGE}:${tag}" \
+              "${DOCKERHUB_IMAGE}:${tag}-amd64" \
+              "${DOCKERHUB_IMAGE}:${tag}-arm64"
+          done

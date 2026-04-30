@@ -27,13 +27,14 @@ alpine
 2.11.2-alpine
 ```
 
-Published platform for now:
+Published platforms:
 
 ```text
 linux/amd64
+linux/arm64
 ```
 
-`linux/arm64` is intentionally not enabled yet because the first public run spent too long building under QEMU on the hosted runner. Add it back when using a native ARM runner or a split-arch manifest workflow.
+The `arm64` image is built on GitHub's native `ubuntu-24.04-arm` runner instead of QEMU. CI pushes architecture-specific temporary tags, then merges them into the public multi-arch tags.
 
 ## Included versions
 
