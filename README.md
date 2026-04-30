@@ -23,12 +23,13 @@ alpine
 2.11.2-alpine
 ```
 
-Multi-arch platforms:
+Published platform for now:
 
 ```text
 linux/amd64
-linux/arm64
 ```
+
+`linux/arm64` is intentionally not enabled yet because the first public run spent too long building under QEMU on the hosted runner. Add it back when using a native ARM runner or a split-arch manifest workflow.
 
 ## Included versions
 
