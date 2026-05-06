@@ -3,21 +3,25 @@
 ARG CADDY_VERSION=2.11.2
 ARG CLOUDFLARE_DNS_VERSION=v0.2.3
 ARG REDIS_STORAGE_VERSION=v1.8.0
+ARG OTEL_VERSION=v1.41.0
 
 FROM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
 ARG CLOUDFLARE_DNS_VERSION
 ARG REDIS_STORAGE_VERSION
+ARG OTEL_VERSION
 
 RUN xcaddy build \
     --with github.com/caddy-dns/cloudflare@${CLOUDFLARE_DNS_VERSION} \
-    --with github.com/pberkel/caddy-storage-redis@${REDIS_STORAGE_VERSION}
+    --with github.com/pberkel/caddy-storage-redis@${REDIS_STORAGE_VERSION} \
+    --with go.opentelemetry.io/otel@${OTEL_VERSION}
 
 FROM caddy:${CADDY_VERSION}-alpine
 
 ARG CADDY_VERSION
 ARG CLOUDFLARE_DNS_VERSION
 ARG REDIS_STORAGE_VERSION
+ARG OTEL_VERSION
 
 LABEL org.opencontainers.image.title="caddy-cloudflare-redis" \
       org.opencontainers.image.description="Caddy with Cloudflare DNS and Redis storage modules" \

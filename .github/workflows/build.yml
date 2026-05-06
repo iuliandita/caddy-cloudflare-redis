@@ -31,10 +31,12 @@ permissions:
 # renovate: datasource=docker depName=caddy
 # renovate: datasource=github-releases depName=caddy-dns/cloudflare
 # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
+# renovate: datasource=go depName=go.opentelemetry.io/otel
 env:
   CADDY_VERSION: 2.11.2
   CLOUDFLARE_DNS_VERSION: v0.2.3
   REDIS_STORAGE_VERSION: v1.8.0
+  OTEL_VERSION: v1.41.0
   IMAGE_NAME: caddy-cloudflare-redis
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
   DOCKERHUB_IMAGE: docker.io/iuliandita/caddy-cloudflare-redis
@@ -63,11 +65,12 @@ jobs:
             CADDY_VERSION=${{ env.CADDY_VERSION }}
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+            OTEL_VERSION=${{ env.OTEL_VERSION }}
 
       - name: Verify Caddy modules
         run: |
           set -euo pipefail
-          docker run --rm local/${IMAGE_NAME}:test caddy list-modules | tee /tmp/modules.txt
+          docker run --rm "local/${IMAGE_NAME}:test" caddy list-modules | tee /tmp/modules.txt
           grep -qx 'dns.providers.cloudflare' /tmp/modules.txt
           grep -qx 'caddy.storage.redis' /tmp/modules.txt
 
@@ -86,7 +89,7 @@ jobs:
             --ignorefile /work/.trivyignore \
             --exit-code 1 \
             --format table \
-            local/${IMAGE_NAME}:test
+            "local/${IMAGE_NAME}:test"
 
   dockerhub-enabled:
     name: check Docker Hub publishing
@@ -167,6 +170,7 @@ jobs:
             CADDY_VERSION=${{ env.CADDY_VERSION }}
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+            OTEL_VERSION=${{ env.OTEL_VERSION }}
           cache-from: type=gha,scope=ghcr-${{ matrix.arch }}
           cache-to: type=gha,scope=ghcr-${{ matrix.arch }},mode=max
 
@@ -260,6 +264,7 @@ jobs:
             CADDY_VERSION=${{ env.CADDY_VERSION }}
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
+            OTEL_VERSION=${{ env.OTEL_VERSION }}
           cache-from: type=gha,scope=dockerhub-${{ matrix.arch }}
           cache-to: type=gha,scope=dockerhub-${{ matrix.arch }},mode=max
 
