@@ -1,8 +1,12 @@
 # syntax=docker/dockerfile:1
 
+# renovate: datasource=docker depName=caddy
 ARG CADDY_VERSION=2.11.3
+# renovate: datasource=github-releases depName=caddy-dns/cloudflare
 ARG CLOUDFLARE_DNS_VERSION=v0.2.4
+# renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
 ARG REDIS_STORAGE_VERSION=v1.8.0
+# renovate: datasource=go depName=go.opentelemetry.io/otel
 ARG OTEL_VERSION=v1.43.0
 
 FROM caddy:${CADDY_VERSION}-builder-alpine AS builder

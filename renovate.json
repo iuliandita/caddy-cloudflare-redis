@@ -6,17 +6,30 @@
     ":dependencyDashboard"
   ],
   "labels": ["dependencies"],
-  "packageRules": [
+  "enabledManagers": ["custom.regex", "github-actions"],
+  "customManagers": [
     {
-      "matchManagers": ["dockerfile"],
-      "groupName": "Docker base images"
-    },
+      "customType": "regex",
+      "managerFilePatterns": [
+        ".github/workflows/build.yml",
+        "Dockerfile"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( versioning=(?<versioning>\\S+))?\\s+(?:ARG )?\\w+ ?[:=] ?(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    }
+  ],
+  "packageRules": [
     {
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions"
     },
     {
-      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["caddy"],
+      "groupName": "Caddy"
+    },
+    {
       "matchPackageNames": [
         "caddy-dns/cloudflare",
         "pberkel/caddy-storage-redis"

@@ -28,14 +28,14 @@ permissions:
   contents: read
   packages: write
 
-# renovate: datasource=docker depName=caddy
-# renovate: datasource=github-releases depName=caddy-dns/cloudflare
-# renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
-# renovate: datasource=go depName=go.opentelemetry.io/otel
 env:
+  # renovate: datasource=docker depName=caddy
   CADDY_VERSION: 2.11.3
+  # renovate: datasource=github-releases depName=caddy-dns/cloudflare
   CLOUDFLARE_DNS_VERSION: v0.2.4
+  # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
   REDIS_STORAGE_VERSION: v1.8.0
+  # renovate: datasource=go depName=go.opentelemetry.io/otel
   OTEL_VERSION: v1.43.0
   IMAGE_NAME: caddy-cloudflare-redis
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
