@@ -22,9 +22,3 @@ CVE-2026-30836
 # HIGH: go-jose DoS via crafted JWE. Fixed in 3.0.5 / 4.1.4.
 # Caddy bundles both v3 and v4 via ACME libs. Single CVE ID covers both.
 CVE-2026-34986
-
-# 2026-04-30 / iuliandita
-# HIGH: OpenTelemetry Go SDK PATH hijacking via BSD kenv command.
-# Only reachable on BSD hosts; this image runs on Alpine Linux.
-# Fixed in otel 1.43.0.
-CVE-2026-39883
