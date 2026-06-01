@@ -33,7 +33,7 @@ permissions:
 # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
 # renovate: datasource=go depName=go.opentelemetry.io/otel
 env:
-  CADDY_VERSION: 2.11.2
+  CADDY_VERSION: 2.11.3
   CLOUDFLARE_DNS_VERSION: v0.2.3
   REDIS_STORAGE_VERSION: v1.8.0
   OTEL_VERSION: v1.41.0
