@@ -34,7 +34,7 @@ permissions:
 # renovate: datasource=go depName=go.opentelemetry.io/otel
 env:
   CADDY_VERSION: 2.11.3
-  CLOUDFLARE_DNS_VERSION: v0.2.3
+  CLOUDFLARE_DNS_VERSION: v0.2.4
   REDIS_STORAGE_VERSION: v1.8.0
   OTEL_VERSION: v1.43.0
   IMAGE_NAME: caddy-cloudflare-redis
