@@ -21,10 +21,10 @@ latest
 alpine
 2
 2.11
-2.11.2
+2.11.3
 2-alpine
 2.11-alpine
-2.11.2-alpine
+2.11.3-alpine
 ```
 
 Published platforms:
@@ -40,10 +40,12 @@ The `arm64` image is built on GitHub's native `ubuntu-24.04-arm` runner instead 
 
 | Component | Version |
 | --- | --- |
-| Caddy | `2.11.2` |
-| Cloudflare DNS module | `v0.2.3` |
+| Caddy | `2.11.3` |
+| Cloudflare DNS module | `v0.2.4` |
 | Redis storage module | `v1.8.0` |
-| Final base image | `caddy:2.11.2-alpine` |
+| Final base image | `caddy:2.11.3-alpine` |
+
+These reflect the latest build; the authoritative pins live in `.github/workflows/build.yml` (kept current by Renovate).
 
 ## Quick use
 
@@ -55,7 +57,7 @@ docker run --rm \
   -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
   -v caddy_data:/data \
   -v caddy_config:/config \
-  ghcr.io/iuliandita/caddy-cloudflare-redis:2.11.2-alpine
+  ghcr.io/iuliandita/caddy-cloudflare-redis:alpine
 ```
 
 ## Cloudflare DNS example
