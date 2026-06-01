@@ -7,6 +7,10 @@
   ],
   "labels": ["dependencies"],
   "enabledManagers": ["custom.regex", "github-actions"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  },
   "customManagers": [
     {
       "customType": "regex",
