@@ -30,13 +30,13 @@ permissions:
 
 env:
   # renovate: datasource=docker depName=caddy
-  CADDY_VERSION: 2.11.3
-  # renovate: datasource=github-releases depName=caddy-dns/cloudflare
+  CADDY_VERSION: 2.11.7
+  # renovate: datasource=github-tags depName=caddy-dns/cloudflare
   CLOUDFLARE_DNS_VERSION: v0.2.4
   # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
-  REDIS_STORAGE_VERSION: v1.8.0
+  REDIS_STORAGE_VERSION: v1.9.0
   # renovate: datasource=go depName=go.opentelemetry.io/otel
-  OTEL_VERSION: v1.43.0
+  OTEL_VERSION: v1.47.0
   IMAGE_NAME: caddy-cloudflare-redis
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
   DOCKERHUB_IMAGE: docker.io/iuliandita/caddy-cloudflare-redis
@@ -78,7 +78,7 @@ jobs:
         run: |
           set -euo pipefail
           # renovate: datasource=docker depName=aquasec/trivy
-          TRIVY_VERSION=0.70.0
+          TRIVY_VERSION=0.76.1
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "${GITHUB_WORKSPACE}/.trivyignore:/work/.trivyignore:ro" \
