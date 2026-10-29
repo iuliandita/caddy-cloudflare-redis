@@ -5,11 +5,18 @@
     ":semanticCommits",
     ":dependencyDashboard"
   ],
-  "labels": ["dependencies"],
-  "enabledManagers": ["custom.regex", "github-actions"],
+  "labels": [
+    "dependencies"
+  ],
+  "enabledManagers": [
+    "custom.regex",
+    "github-actions"
+  ],
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
-    "labels": ["security"]
+    "labels": [
+      "security"
+    ]
   },
   "customManagers": [
     {
@@ -26,29 +33,15 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": ["caddy", "caddy-dns/cloudflare", "pberkel/caddy-storage-redis", "aquasec/trivy"],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "platformAutomerge": false
-    },
-    {
-      "matchDatasources": ["go"],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "platformAutomerge": false
-    },
-    {
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "platformAutomerge": false
-    },
-    {
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "GitHub Actions"
     },
     {
-      "matchPackageNames": ["caddy"],
+      "matchPackageNames": [
+        "caddy"
+      ],
       "groupName": "Caddy"
     },
     {
