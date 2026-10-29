@@ -26,7 +26,7 @@ RUN xcaddy build \
     --with github.com/pberkel/caddy-storage-redis@${REDIS_STORAGE_VERSION} \
     --with go.opentelemetry.io/otel@${OTEL_VERSION} \
     --with github.com/go-jose/go-jose/v4@${GO_JOSE_VERSION} \
-    --with golang.org/x/net@${X_NET_VERSION}
+    --with golang.org/x/net/http2@${X_NET_VERSION}
 
 FROM caddy:${CADDY_VERSION}-alpine
 
