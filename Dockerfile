@@ -8,17 +8,25 @@ ARG CLOUDFLARE_DNS_VERSION=v0.2.4
 ARG REDIS_STORAGE_VERSION=v1.9.0
 # renovate: datasource=go depName=go.opentelemetry.io/otel
 ARG OTEL_VERSION=v1.47.0
+# renovate: datasource=go depName=github.com/go-jose/go-jose/v4
+ARG GO_JOSE_VERSION=v4.1.6
+# renovate: datasource=go depName=golang.org/x/net
+ARG X_NET_VERSION=v0.62.0
 
 FROM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
 ARG CLOUDFLARE_DNS_VERSION
 ARG REDIS_STORAGE_VERSION
 ARG OTEL_VERSION
+ARG GO_JOSE_VERSION
+ARG X_NET_VERSION
 
 RUN xcaddy build \
     --with github.com/caddy-dns/cloudflare@${CLOUDFLARE_DNS_VERSION} \
     --with github.com/pberkel/caddy-storage-redis@${REDIS_STORAGE_VERSION} \
-    --with go.opentelemetry.io/otel@${OTEL_VERSION}
+    --with go.opentelemetry.io/otel@${OTEL_VERSION} \
+    --with github.com/go-jose/go-jose/v4@${GO_JOSE_VERSION} \
+    --with golang.org/x/net@${X_NET_VERSION}
 
 FROM caddy:${CADDY_VERSION}-alpine
 
@@ -26,6 +34,8 @@ ARG CADDY_VERSION
 ARG CLOUDFLARE_DNS_VERSION
 ARG REDIS_STORAGE_VERSION
 ARG OTEL_VERSION
+ARG GO_JOSE_VERSION
+ARG X_NET_VERSION
 
 LABEL org.opencontainers.image.title="caddy-cloudflare-redis" \
       org.opencontainers.image.description="Caddy with Cloudflare DNS and Redis storage modules" \

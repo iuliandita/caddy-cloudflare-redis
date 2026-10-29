@@ -37,6 +37,10 @@ env:
   REDIS_STORAGE_VERSION: v1.9.0
   # renovate: datasource=go depName=go.opentelemetry.io/otel
   OTEL_VERSION: v1.47.0
+  # renovate: datasource=go depName=github.com/go-jose/go-jose/v4
+  GO_JOSE_VERSION: v4.1.6
+  # renovate: datasource=go depName=golang.org/x/net
+  X_NET_VERSION: v0.62.0
   IMAGE_NAME: caddy-cloudflare-redis
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
   DOCKERHUB_IMAGE: docker.io/iuliandita/caddy-cloudflare-redis
@@ -66,6 +70,8 @@ jobs:
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
             OTEL_VERSION=${{ env.OTEL_VERSION }}
+            GO_JOSE_VERSION=${{ env.GO_JOSE_VERSION }}
+            X_NET_VERSION=${{ env.X_NET_VERSION }}
 
       - name: Verify Caddy modules
         run: |
@@ -171,6 +177,8 @@ jobs:
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
             OTEL_VERSION=${{ env.OTEL_VERSION }}
+            GO_JOSE_VERSION=${{ env.GO_JOSE_VERSION }}
+            X_NET_VERSION=${{ env.X_NET_VERSION }}
           cache-from: type=gha,scope=ghcr-${{ matrix.arch }}
           cache-to: type=gha,scope=ghcr-${{ matrix.arch }},mode=max
 
@@ -265,6 +273,8 @@ jobs:
             CLOUDFLARE_DNS_VERSION=${{ env.CLOUDFLARE_DNS_VERSION }}
             REDIS_STORAGE_VERSION=${{ env.REDIS_STORAGE_VERSION }}
             OTEL_VERSION=${{ env.OTEL_VERSION }}
+            GO_JOSE_VERSION=${{ env.GO_JOSE_VERSION }}
+            X_NET_VERSION=${{ env.X_NET_VERSION }}
           cache-from: type=gha,scope=dockerhub-${{ matrix.arch }}
           cache-to: type=gha,scope=dockerhub-${{ matrix.arch }},mode=max
 
