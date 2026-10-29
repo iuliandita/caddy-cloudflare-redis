@@ -29,19 +29,19 @@
       "matchPackageNames": ["caddy", "caddy-dns/cloudflare", "pberkel/caddy-storage-redis", "aquasec/trivy"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": false
     },
     {
       "matchDatasources": ["go"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": false
     },
     {
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": false
     },
     {
       "matchManagers": ["github-actions"],
