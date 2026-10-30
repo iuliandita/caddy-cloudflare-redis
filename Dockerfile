@@ -9,7 +9,7 @@ ARG REDIS_STORAGE_VERSION=v1.9.0
 # renovate: datasource=go depName=go.opentelemetry.io/otel
 ARG OTEL_VERSION=v1.47.0
 # renovate: datasource=go depName=github.com/go-jose/go-jose/v4
-ARG GO_JOSE_VERSION=v4.1.6
+ARG GO_JOSE_VERSION=v4.1.7
 # renovate: datasource=go depName=golang.org/x/net
 ARG X_NET_VERSION=v0.62.0
 
