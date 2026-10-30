@@ -38,7 +38,7 @@ env:
   # renovate: datasource=go depName=go.opentelemetry.io/otel
   OTEL_VERSION: v1.47.0
   # renovate: datasource=go depName=github.com/go-jose/go-jose/v4
-  GO_JOSE_VERSION: v4.1.6
+  GO_JOSE_VERSION: v4.1.7
   # renovate: datasource=go depName=golang.org/x/net
   X_NET_VERSION: v0.62.0
   IMAGE_NAME: caddy-cloudflare-redis
