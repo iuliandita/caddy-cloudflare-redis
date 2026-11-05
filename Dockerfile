@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # renovate: datasource=docker depName=caddy
-ARG CADDY_VERSION=2.11.7
+ARG CADDY_VERSION=2.11.9
 # renovate: datasource=github-tags depName=caddy-dns/cloudflare
 ARG CLOUDFLARE_DNS_VERSION=v0.2.4
 # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
