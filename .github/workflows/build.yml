@@ -84,7 +84,7 @@ jobs:
         run: |
           set -euo pipefail
           # renovate: datasource=docker depName=aquasec/trivy
-          TRIVY_VERSION=0.76.1
+          TRIVY_VERSION=0.76.2
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "${GITHUB_WORKSPACE}/.trivyignore:/work/.trivyignore:ro" \
