@@ -30,7 +30,7 @@ permissions:
 
 env:
   # renovate: datasource=docker depName=caddy
-  CADDY_VERSION: 2.11.7
+  CADDY_VERSION: 2.11.9
   # renovate: datasource=github-tags depName=caddy-dns/cloudflare
   CLOUDFLARE_DNS_VERSION: v0.2.4
   # renovate: datasource=github-releases depName=pberkel/caddy-storage-redis
