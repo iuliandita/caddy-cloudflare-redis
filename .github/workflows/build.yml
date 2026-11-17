@@ -40,7 +40,7 @@ env:
   # renovate: datasource=go depName=github.com/go-jose/go-jose/v4
   GO_JOSE_VERSION: v4.1.6
   # renovate: datasource=go depName=golang.org/x/net
-  X_NET_VERSION: v0.62.0
+  X_NET_VERSION: v0.63.0
   IMAGE_NAME: caddy-cloudflare-redis
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare-redis
   DOCKERHUB_IMAGE: docker.io/iuliandita/caddy-cloudflare-redis
