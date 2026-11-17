@@ -11,7 +11,7 @@ ARG OTEL_VERSION=v1.47.0
 # renovate: datasource=go depName=github.com/go-jose/go-jose/v4
 ARG GO_JOSE_VERSION=v4.1.6
 # renovate: datasource=go depName=golang.org/x/net
-ARG X_NET_VERSION=v0.62.0
+ARG X_NET_VERSION=v0.63.0
 
 FROM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
