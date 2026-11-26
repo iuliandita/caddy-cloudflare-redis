@@ -106,7 +106,9 @@ The image starts as root only long enough to repair ownership on common Caddy wr
 
 It then drops privileges with `su-exec` and runs Caddy as the `caddy` user.
 
-That means bind-mounted volumes get self-healed on first start, but the Caddy process itself does not run as root.
+On every start, each of these paths that exists and whose top-level owner is not `caddy` is re-owned
+recursively. A path whose top-level directory is already owned by `caddy` is left alone, even if files inside
+it are not. The Caddy process itself never runs as root.
 
 ## Healthcheck
 
